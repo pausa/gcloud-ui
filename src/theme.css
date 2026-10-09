@@ -1,0 +1,133 @@
+/* Doom-one inspired dark, low-contrast theme. */
+
+:root {
+  --bg: #282c34;
+  --bg-alt: #21242b;
+  --bg-highlight: #3f444a;
+  --fg: #bbc2cf;
+  --fg-alt: #5b6268;
+  --red: #ff6c6b;
+  --orange: #da8548;
+  --yellow: #ecbe7b;
+  --green: #95be65;
+  --blue: #51afef;
+  --violet: #a9a1e1;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+h1 {
+  color: var(--blue);
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin: 0 0 1rem;
+}
+
+.app {
+  padding: 1.25rem;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+a {
+  color: var(--blue);
+}
+
+.toolbar {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  align-items: center;
+}
+
+input[type="search"] {
+  flex: 1;
+  max-width: 24rem;
+  padding: 0.4rem 0.7rem;
+  background: var(--bg-alt);
+  color: var(--fg);
+  border: 1px solid var(--bg-highlight);
+  border-radius: 4px;
+  outline: none;
+}
+
+input[type="search"]:focus {
+  border-color: var(--blue);
+}
+
+input[type="search"]::placeholder {
+  color: var(--fg-alt);
+}
+
+button {
+  padding: 0.4rem 0.9rem;
+  background: var(--bg-alt);
+  color: var(--fg);
+  border: 1px solid var(--bg-highlight);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: var(--bg-highlight);
+  border-color: var(--blue);
+  color: #ffffff;
+}
+
+button:active {
+  background: var(--blue);
+  color: var(--bg);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.45rem 0.75rem;
+  border-bottom: 1px solid var(--bg-highlight);
+}
+
+th {
+  color: var(--fg-alt);
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+tbody tr:hover {
+  background: var(--bg-alt);
+}
+
+.ok {
+  color: var(--green);
+}
+
+.error {
+  color: var(--red);
+}
+
+p {
+  color: var(--fg);
+}

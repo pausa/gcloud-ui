@@ -16,5 +16,6 @@
 - The last run column now shows the =startTime= of the last execution instead of its completion time.
 - Detail fields are initialised from =status.latestCreatedExecution= of the job list response (no extra gcloud call); the per-row button only loads the missing info (e.g. exit code).
 - Fix: the v1 =latestCreatedExecution= reference has no =startTime=; the list now reads =creationTimestamp=, =completionTimestamp= and =completionStatus= (which also initialises the exit code).
+- Added a dark low-contrast theme inspired by the doom-one Emacs theme (=src/theme.css=).
 - Name filter: whitespace-separated tokens are matched independently (order doesn't matter), e.g. =test fetcher= matches =fetcher-customer-test-job=.
   
