@@ -11,4 +11,6 @@
   
 - README.org: documented the suggested stack (Tauri 2 + TypeScript/Solid, gcloud subprocess model) and how to run the project.
 - shell.nix: added the required dependencies (rust, node, Tauri Linux build libs) alongside =google-cloud-sdk=.
+- Implemented the *Job list view* section: scaffolded the Tauri 2 + Solid project (see README.org for the stack) and added a Cloud Run jobs table backed by =gcloud run jobs list= and =gcloud run jobs executions list=. Features: filter by name, exit code of last run (OK/error badge), name, last run time and duration. Verified with =npm run build= and =cargo check=.
+- Job list no longer browses job executions on load; run info (exit code, last run time, duration) is now loaded on demand via a per-row button (=load_job_details= command).
   

@@ -41,3 +41,7 @@ Prerequisites: [[https://www.rust-lang.org/tools/install][Rust]], [[https://node
   - name
   - last run time
   - time it took to complete
+
+** TODO login view
+- [ ] the software checks at startup if logged in and starts an authentication flow if not
+- [ ] it should call the =gcloud auth login= command to login the user
