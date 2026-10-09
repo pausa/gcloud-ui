@@ -1,0 +1,32 @@
+* Gcould-Ui
+
+A desktop native UI to interact with google cloud.
+
+The goal is *not* to reach feature parity with [[https://console.cloud.google.com][GCP web console]], but to have an easy to extend tool to fit work needs.
+
+The tool is backed up by the =gcloud= cli, this helps dealing with authentication in a secure way.
+
+* Suggested approach
+
+** Stack
+
+- *Tauri 2* (Rust) as the app shell: small binaries, native webview, first-class subprocess handling and IPC.
+- *TypeScript + Solid* for the frontend: fast, simple reactivity, well suited for resource tables and log streams.
+- *Rust + tokio* for backend logic: spawn =gcloud= as async child processes, stream stdout/stderr to the UI.
+- *Auth*: delegate entirely to =gcloud auth=. Credentials are never handled by the app itself.
+- *State* (optional): SQLite via =rusqlite= for cached resource listings, favorites and command history.
+
+** Design
+
+The UI is a thin layer over =gcloud --format=json <command>=. Every panel maps to a command spec (arg template + JSON output mapping), so adding new GCP services is mostly configuration, not code.
+
+** How to run
+
+Prerequisites: [[https://www.rust-lang.org/tools/install][Rust]], [[https://nodejs.org][Node.js]] and a system webview (see [[https://tauri.app/start/prerequisites/][Tauri prerequisites]]). The =gcloud= cli is provided by =shell.nix=.
+
+#+begin_src shell
+  nix-shell                              # provides google-cloud-sdk
+  npm install                            # frontend dependencies
+  npm run tauri dev                      # run in development mode
+  npm run tauri build                    # build a release binary
+#+end_src
