@@ -130,7 +130,7 @@ pub async fn job_details(name: &str, region: &str) -> Result<JobDetails, String>
             };
             Ok(JobDetails {
                 exit_code: extract_exit_code(&exec),
-                last_run: exec["status"]["completionTime"].as_str().map(String::from),
+                last_run: exec["status"]["startTime"].as_str().map(String::from),
                 duration_secs,
             })
         }

@@ -33,10 +33,10 @@ Prerequisites: [[https://www.rust-lang.org/tools/install][Rust]], [[https://node
 
 * Sections
 
-** TODO Job list view
-- [ ] list all cloud run jobs
-- [ ] allow to filter by name
-- [ ] show a table with following info for each job:
+** DONE Job list view
+- [X] list all cloud run jobs
+- [X] allow to filter by name
+- [X] show a table with following info for each job:
   - exit code of last run (0 = OK, other are errors)
   - name
   - last run time
