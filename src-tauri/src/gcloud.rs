@@ -7,6 +7,8 @@ use tokio::process::Command;
 pub struct JobRow {
     pub name: String,
     pub region: String,
+    /// Initial run info from "latestCreatedExecution" (no extra gcloud call).
+    pub details: JobDetails,
 }
 
 #[derive(Serialize)]
@@ -14,6 +16,15 @@ pub struct JobDetails {
     pub exit_code: Option<i32>,
     pub last_run: Option<String>,
     pub duration_secs: Option<f64>,
+}
+
+fn duration_secs(start: Option<&str>, completion: Option<&str>) -> Option<f64> {
+    let start = start.and_then(parse_time);
+    let completion = completion.and_then(parse_time);
+    match (start, completion) {
+        (Some(s), Some(c)) => Some((c - s).num_milliseconds() as f64 / 1000.0),
+        _ => None,
+    }
 }
 
 async fn run_gcloud(args: &[String]) -> Result<String, String> {
@@ -36,6 +47,15 @@ fn parse_time(s: &str) -> Option<DateTime<Utc>> {
     DateTime::parse_from_rfc3339(s)
         .ok()
         .map(|d| d.with_timezone(&Utc))
+}
+
+/// Map the ExecutionReference completion status (v1 API) to an exit code.
+fn completion_status_to_exit_code(status: Option<&str>) -> Option<i32> {
+    match status? {
+        s if s.ends_with("SUCCEEDED") => Some(0),
+        s if s.ends_with("FAILED") => Some(1),
+        _ => None,
+    }
 }
 
 /// Extract the exit code of the last execution: prefer the reported
@@ -107,9 +127,18 @@ pub async fn list_jobs() -> Result<Vec<JobRow>, String> {
                 })
                 .unwrap_or_default()
                 .to_string();
+            let latest = &job["status"]["latestCreatedExecution"];
+            // In the v1 list output the ExecutionReference has no startTime;
+            // creationTimestamp is what gcloud itself displays as last run.
+            let start = latest["creationTimestamp"].as_str();
             Some(JobRow {
                 name: name.to_string(),
                 region,
+                details: JobDetails {
+                    exit_code: completion_status_to_exit_code(latest["completionStatus"].as_str()),
+                    last_run: start.map(String::from),
+                    duration_secs: duration_secs(start, latest["completionTimestamp"].as_str()),
+                },
             })
         })
         .collect();
@@ -120,18 +149,11 @@ pub async fn list_jobs() -> Result<Vec<JobRow>, String> {
 pub async fn job_details(name: &str, region: &str) -> Result<JobDetails, String> {
     match last_execution(name, region).await? {
         Some(exec) => {
-            let start = exec["status"]["startTime"].as_str().and_then(parse_time);
-            let completion = exec["status"]["completionTime"]
-                .as_str()
-                .and_then(parse_time);
-            let duration_secs = match (start, completion) {
-                (Some(s), Some(c)) => Some((c - s).num_milliseconds() as f64 / 1000.0),
-                _ => None,
-            };
+            let start = exec["status"]["startTime"].as_str();
             Ok(JobDetails {
                 exit_code: extract_exit_code(&exec),
-                last_run: exec["status"]["startTime"].as_str().map(String::from),
-                duration_secs,
+                last_run: start.map(String::from),
+                duration_secs: duration_secs(start, exec["status"]["completionTime"].as_str()),
             })
         }
         None => Ok(JobDetails {

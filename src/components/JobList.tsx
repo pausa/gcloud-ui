@@ -27,6 +27,10 @@ export default function JobList() {
 
   const key = (job: JobRow) => `${job.region}/${job.name}`;
 
+  /** Run info for a row: overrides loaded on demand, else the initial
+   * details from "latestCreatedExecution". */
+  const detailsFor = (job: JobRow): JobDetails => details()[key(job)] ?? job.details;
+
   async function loadDetails(job: JobRow) {
     setDetails((d) => ({ ...d, [key(job)]: "loading" }));
     try {
@@ -45,8 +49,17 @@ export default function JobList() {
 
   const filtered = createMemo(() => {
     const rows = jobs() ?? [];
-    const f = filter().trim().toLowerCase();
-    return f ? rows.filter((r) => r.name.toLowerCase().includes(f)) : rows;
+    // Every whitespace-separated token must match the name, in any order.
+    const tokens = filter()
+      .trim()
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((t) => t.length > 0);
+    if (tokens.length === 0) return rows;
+    return rows.filter((r) => {
+      const name = r.name.toLowerCase();
+      return tokens.every((t) => name.includes(t));
+    });
   });
 
   return (
@@ -79,62 +92,50 @@ export default function JobList() {
             </thead>
             <tbody>
               <For each={filtered()}>
-                {(job: JobRow) => (
-                  <tr>
-                    <td>{formatTime(details()[key(job)]?.last_run ?? null)}</td>
-                    <td>
-                      {(() => {
-                        const det = details()[key(job)];
-                        return (
-                          <Show
-                            when={det && det !== "loading" && det !== "error"}
-                            fallback={<span>—</span>}
-                          >
-                            {(d) => (
-                              <Show
-                                when={d().exit_code != null}
-                                fallback={<span>—</span>}
-                              >
-                                <span class={d().exit_code === 0 ? "ok" : "error"}>
-                                  {d().exit_code === 0
-                                    ? "OK (0)"
-                                    : `error (${d().exit_code})`}
-                                </span>
-                              </Show>
-                            )}
-                          </Show>
-                        );
-                      })()}
-                    </td>
-                    <td>{job.name}</td>
-                    <td>{job.region || "—"}</td>
-                    <td>{formatDuration(details()[key(job)]?.duration_secs ?? null)}</td>
-                    <td>
-                      <Show
-                        when={details()[key(job)]}
-                        fallback={
-                          <button onClick={() => loadDetails(job)}>Load run info</button>
-                        }
-                      >
-                        {(det) => (
-                          <Show
-                            when={det() === "loading"}
-                            fallback={
-                              <Show
-                                when={det() === "error"}
-                                fallback={null}
-                              >
-                                <button onClick={() => loadDetails(job)}>Retry</button>
-                              </Show>
-                            }
-                          >
-                            <span>loading…</span>
-                          </Show>
-                        )}
-                      </Show>
-                    </td>
-                  </tr>
-                )}
+                {(job: JobRow) => {
+                  const det = () => detailsFor(job);
+                  const override = () => details()[key(job)];
+                  return (
+                    <tr>
+                      <td>{formatTime(det().last_run)}</td>
+                      <td>
+                        <Show when={det().exit_code != null} fallback={<span>—</span>}>
+                          <span class={det().exit_code === 0 ? "ok" : "error"}>
+                            {det().exit_code === 0
+                              ? "OK (0)"
+                              : `error (${det().exit_code})`}
+                          </span>
+                        </Show>
+                      </td>
+                      <td>{job.name}</td>
+                      <td>{job.region || "—"}</td>
+                      <td>{formatDuration(det().duration_secs)}</td>
+                      <td>
+                        <Show
+                          when={override()}
+                          fallback={
+                            <button onClick={() => loadDetails(job)}>
+                              Load run info
+                            </button>
+                          }
+                        >
+                          {(o) => (
+                            <Show
+                              when={o() === "loading"}
+                              fallback={
+                                <Show when={o() === "error"}>
+                                  <button onClick={() => loadDetails(job)}>Retry</button>
+                                </Show>
+                              }
+                            >
+                              <span>loading…</span>
+                            </Show>
+                          )}
+                        </Show>
+                      </td>
+                    </tr>
+                  );
+                }}
               </For>
               <Show when={filtered().length === 0}>
                 <tr>
