@@ -30,3 +30,14 @@ Prerequisites: [[https://www.rust-lang.org/tools/install][Rust]], [[https://node
   npm run tauri dev                      # run in development mode
   npm run tauri build                    # build a release binary
 #+end_src
+
+* Sections
+
+** TODO Job list view
+- [ ] list all cloud run jobs
+- [ ] allow to filter by name
+- [ ] show a table with following info for each job:
+  - exit code of last run (0 = OK, other are errors)
+  - name
+  - last run time
+  - time it took to complete

@@ -3,6 +3,7 @@
 - Check =README.org= for general info and sections to implement
 - Try to minimize code changes
 - Test will be done by a human
+- Ensure that the software compiles
 - =gcloud= is available but not logged in, you can use it only for documentation
 - Write in the =Changelog= section below a brief summary of the changes you make
 
