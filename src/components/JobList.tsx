@@ -1,5 +1,5 @@
 import { createMemo, createResource, createSignal, For, Show } from "solid-js";
-import { listJobs, loadJobDetails, type JobDetails, type JobRow } from "../api";
+import { listJobs, loadJobDetails, openJobInConsole, type JobDetails, type JobRow } from "../api";
 
 function formatDuration(secs: number | null): string {
   if (secs == null) return "—";
@@ -111,6 +111,16 @@ export default function JobList() {
                       <td>{job.region || "—"}</td>
                       <td>{formatDuration(det().duration_secs)}</td>
                       <td>
+                        <button
+                          title="Open in Cloud Console"
+                          onClick={() =>
+                            openJobInConsole(job.name, job.region).catch((e) =>
+                              console.error("failed to open console page", e)
+                            )
+                          }
+                        >
+                          Console
+                        </button>{" "}
                         <Show
                           when={override()}
                           fallback={

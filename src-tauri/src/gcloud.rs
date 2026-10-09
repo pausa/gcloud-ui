@@ -145,6 +145,34 @@ pub async fn list_jobs() -> Result<Vec<JobRow>, String> {
     Ok(rows)
 }
 
+/// Open the Cloud Console page of a job in the system browser.
+pub async fn open_job_in_console(name: &str, region: &str) -> Result<(), String> {
+    let out = run_gcloud(&[
+        "config".into(),
+        "get-value".into(),
+        "project".into(),
+    ])
+    .await?;
+    let project = out.trim().to_string();
+    if project.is_empty() {
+        return Err("no gcloud project configured".into());
+    }
+    let url = if region.is_empty() {
+        format!(
+            "https://console.cloud.google.com/run/jobs?project={project}"
+        )
+    } else {
+        format!(
+            "https://console.cloud.google.com/run/jobs/details/{region}/{name}?project={project}"
+        )
+    };
+    std::process::Command::new("xdg-open")
+        .arg(&url)
+        .spawn()
+        .map_err(|e| format!("failed to open browser: {e}"))?;
+    Ok(())
+}
+
 /// Load the run info of the last execution of a job (on demand).
 pub async fn job_details(name: &str, region: &str) -> Result<JobDetails, String> {
     match last_execution(name, region).await? {

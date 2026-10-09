@@ -17,5 +17,6 @@
 - Detail fields are initialised from =status.latestCreatedExecution= of the job list response (no extra gcloud call); the per-row button only loads the missing info (e.g. exit code).
 - Fix: the v1 =latestCreatedExecution= reference has no =startTime=; the list now reads =creationTimestamp=, =completionTimestamp= and =completionStatus= (which also initialises the exit code).
 - Added a dark low-contrast theme inspired by the doom-one Emacs theme (=src/theme.css=).
+- Added a per-row "Console" button that opens the job's Cloud Console page in the browser (project from =gcloud config get-value project=, opened via =xdg-open=).
 - Name filter: whitespace-separated tokens are matched independently (order doesn't matter), e.g. =test fetcher= matches =fetcher-customer-test-job=.
   

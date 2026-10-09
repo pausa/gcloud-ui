@@ -20,3 +20,7 @@ export async function listJobs(): Promise<JobRow[]> {
 export async function loadJobDetails(name: string, region: string): Promise<JobDetails> {
   return invoke<JobDetails>("load_job_details", { name, region });
 }
+
+export async function openJobInConsole(name: string, region: string): Promise<void> {
+  return invoke("open_job_in_console", { name, region });
+}
