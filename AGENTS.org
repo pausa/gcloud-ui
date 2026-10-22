@@ -18,5 +18,7 @@
 - Fix: the v1 =latestCreatedExecution= reference has no =startTime=; the list now reads =creationTimestamp=, =completionTimestamp= and =completionStatus= (which also initialises the exit code).
 - Added a dark low-contrast theme inspired by the doom-one Emacs theme (=src/theme.css=).
 - Added a per-row "Console" button that opens the job's Cloud Console page in the browser (project from =gcloud config get-value project=, opened via =xdg-open=).
+- Implemented the *Service list view*: Jobs/Services tabs (=src/App.tsx=), =src/components/ServiceList.tsx= backed by =gcloud run services list= (health from the =Ready= condition), name filter shared with the job view (=src/filter.ts=), per-row "Console" button and "Redeploy" action (=gcloud run services update=).
+- Fix: redeploy now fetches the service's current image and runs =gcloud run deploy= (=services update= with no changes creates no new revision); redeploy errors are shown in the UI instead of only being logged.
 - Name filter: whitespace-separated tokens are matched independently (order doesn't matter), e.g. =test fetcher= matches =fetcher-customer-test-job=.
   

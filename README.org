@@ -35,12 +35,24 @@ Prerequisites: [[https://www.rust-lang.org/tools/install][Rust]], [[https://node
 
 ** DONE Job list view
 - [X] list all cloud run jobs
-- [X] allow to filter by name
+- [X] allow to filter by name (whitespace-separated tokens match in any order)
 - [X] show a table with following info for each job:
   - exit code of last run (0 = OK, other are errors)
   - name
-  - last run time
+  - last run time (start time of last execution)
   - time it took to complete
+- [X] job executions are not fetched when listing; a per-row "Load run info" button loads the extra info on demand (initial values come from =latestCreatedExecution=)
+- [X] per-row "Console" button opens the job's page in the Cloud Console
+
+** DONE Service list view
+- [X] very similar to the job view
+- fields to show:
+  - [X] health status
+  - [X] service name
+  - [X] region
+- action buttons:
+  - [X] open in console
+  - [X] redeploy service (redeploys the current image as a new revision; errors are shown in the UI)
 
 ** TODO login view
 - [ ] the software checks at startup if logged in and starts an authentication flow if not

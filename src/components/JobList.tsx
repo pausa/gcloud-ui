@@ -1,5 +1,6 @@
 import { createMemo, createResource, createSignal, For, Show } from "solid-js";
 import { listJobs, loadJobDetails, openJobInConsole, type JobDetails, type JobRow } from "../api";
+import { matchesName } from "../filter";
 
 function formatDuration(secs: number | null): string {
   if (secs == null) return "—";
@@ -49,17 +50,8 @@ export default function JobList() {
 
   const filtered = createMemo(() => {
     const rows = jobs() ?? [];
-    // Every whitespace-separated token must match the name, in any order.
-    const tokens = filter()
-      .trim()
-      .toLowerCase()
-      .split(/\s+/)
-      .filter((t) => t.length > 0);
-    if (tokens.length === 0) return rows;
-    return rows.filter((r) => {
-      const name = r.name.toLowerCase();
-      return tokens.every((t) => name.includes(t));
-    });
+    const f = filter();
+    return f.trim() ? rows.filter((r) => matchesName(r.name, f)) : rows;
   });
 
   return (

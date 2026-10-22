@@ -24,3 +24,23 @@ export async function loadJobDetails(name: string, region: string): Promise<JobD
 export async function openJobInConsole(name: string, region: string): Promise<void> {
   return invoke("open_job_in_console", { name, region });
 }
+
+export interface ServiceRow {
+  name: string;
+  region: string;
+  /** Health from the "Ready" condition: true = healthy, false = unhealthy,
+   * null = unknown. */
+  ready: boolean | null;
+}
+
+export async function listServices(): Promise<ServiceRow[]> {
+  return invoke<ServiceRow[]>("list_services");
+}
+
+export async function redeployService(name: string, region: string): Promise<void> {
+  return invoke("redeploy_service", { name, region });
+}
+
+export async function openServiceInConsole(name: string, region: string): Promise<void> {
+  return invoke("open_service_in_console", { name, region });
+}

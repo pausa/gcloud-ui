@@ -131,3 +131,28 @@ tbody tr:hover {
 p {
   color: var(--fg);
 }
+
+.tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--bg-highlight);
+}
+
+.tabs button {
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 4px 4px 0 0;
+  background: transparent;
+  color: var(--fg-alt);
+}
+
+.tabs button:hover {
+  background: var(--bg-alt);
+  color: var(--fg);
+}
+
+.tabs button.active {
+  color: var(--blue);
+  border-bottom-color: var(--blue);
+}

@@ -49,6 +49,39 @@ fn parse_time(s: &str) -> Option<DateTime<Utc>> {
         .map(|d| d.with_timezone(&Utc))
 }
 
+/// Read the region of a Cloud Run entity from its list JSON.
+fn entity_region(entity: &Value) -> String {
+    entity["metadata"]["labels"]["cloud.googleapis.com/location"]
+        .as_str()
+        .or_else(|| {
+            entity["metadata"]["annotations"]["run.googleapis.com/location"].as_str()
+        })
+        .unwrap_or_default()
+        .to_string()
+}
+
+async fn current_project() -> Result<String, String> {
+    let out = run_gcloud(&[
+        "config".into(),
+        "get-value".into(),
+        "project".into(),
+    ])
+    .await?;
+    let project = out.trim().to_string();
+    if project.is_empty() {
+        return Err("no gcloud project configured".into());
+    }
+    Ok(project)
+}
+
+fn open_in_browser(url: &str) -> Result<(), String> {
+    std::process::Command::new("xdg-open")
+        .arg(url)
+        .spawn()
+        .map(|_| ())
+        .map_err(|e| format!("failed to open browser: {e}"))
+}
+
 /// Map the ExecutionReference completion status (v1 API) to an exit code.
 fn completion_status_to_exit_code(status: Option<&str>) -> Option<i32> {
     match status? {
@@ -147,16 +180,7 @@ pub async fn list_jobs() -> Result<Vec<JobRow>, String> {
 
 /// Open the Cloud Console page of a job in the system browser.
 pub async fn open_job_in_console(name: &str, region: &str) -> Result<(), String> {
-    let out = run_gcloud(&[
-        "config".into(),
-        "get-value".into(),
-        "project".into(),
-    ])
-    .await?;
-    let project = out.trim().to_string();
-    if project.is_empty() {
-        return Err("no gcloud project configured".into());
-    }
+    let project = current_project().await?;
     let url = if region.is_empty() {
         format!(
             "https://console.cloud.google.com/run/jobs?project={project}"
@@ -166,11 +190,7 @@ pub async fn open_job_in_console(name: &str, region: &str) -> Result<(), String>
             "https://console.cloud.google.com/run/jobs/details/{region}/{name}?project={project}"
         )
     };
-    std::process::Command::new("xdg-open")
-        .arg(&url)
-        .spawn()
-        .map_err(|e| format!("failed to open browser: {e}"))?;
-    Ok(())
+    open_in_browser(&url)
 }
 
 /// Load the run info of the last execution of a job (on demand).
@@ -190,4 +210,105 @@ pub async fn job_details(name: &str, region: &str) -> Result<JobDetails, String>
             duration_secs: None,
         }),
     }
+}
+
+#[derive(Serialize)]
+pub struct ServiceRow {
+    pub name: String,
+    pub region: String,
+    /// Health from the "Ready" condition: Some(true) = healthy,
+    /// Some(false) = unhealthy, None = unknown.
+    pub ready: Option<bool>,
+}
+
+pub async fn list_services() -> Result<Vec<ServiceRow>, String> {
+    let out = run_gcloud(&[
+        "run".into(),
+        "services".into(),
+        "list".into(),
+        "--format=json".into(),
+    ])
+    .await?;
+    let services: Vec<Value> =
+        serde_json::from_str(&out).map_err(|e| format!("failed to parse services: {e}"))?;
+
+    let rows = services
+        .iter()
+        .filter_map(|svc| {
+            let name = svc["metadata"]["name"].as_str()?;
+            if name.is_empty() {
+                return None;
+            }
+            let ready = svc["status"]["conditions"]
+                .as_array()
+                .and_then(|cs| {
+                    cs.iter()
+                        .find(|c| c["type"].as_str() == Some("Ready"))
+                        .and_then(|c| c["status"].as_str())
+                })
+                .and_then(|s| match s {
+                    "True" => Some(true),
+                    "False" => Some(false),
+                    _ => None,
+                });
+            Some(ServiceRow {
+                name: name.to_string(),
+                region: entity_region(svc),
+                ready,
+            })
+        })
+        .collect();
+    Ok(rows)
+}
+
+/// Redeploy a service: fetch its current image and run
+/// `gcloud run deploy` with it, which creates a new revision.
+/// (`services update` with no changes creates no new revision.)
+pub async fn redeploy_service(name: &str, region: &str) -> Result<(), String> {
+    let mut describe: Vec<String> = ["run", "services", "describe", name, "--format=json"]
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
+    if !region.is_empty() {
+        describe.extend(["--region".to_string(), region.to_string()]);
+    }
+    let out = run_gcloud(&describe).await?;
+    let svc: Value =
+        serde_json::from_str(&out).map_err(|e| format!("failed to parse service: {e}"))?;
+    let image = svc["spec"]["template"]["spec"]["containers"][0]["image"]
+        .as_str()
+        .ok_or("service has no container image")?
+        .to_string();
+
+    let mut deploy: Vec<String> = [
+        "run",
+        "deploy",
+        name,
+        "--image",
+        &image,
+        "--quiet",
+    ]
+    .iter()
+    .map(|s| s.to_string())
+    .collect();
+    if !region.is_empty() {
+        deploy.extend(["--region".to_string(), region.to_string()]);
+    }
+    run_gcloud(&deploy).await?;
+    Ok(())
+}
+
+/// Open the Cloud Console page of a service in the system browser.
+pub async fn open_service_in_console(name: &str, region: &str) -> Result<(), String> {
+    let project = current_project().await?;
+    let url = if region.is_empty() {
+        format!(
+            "https://console.cloud.google.com/run?project={project}"
+        )
+    } else {
+        format!(
+            "https://console.cloud.google.com/run/detail/{region}/{name}?project={project}"
+        )
+    };
+    open_in_browser(&url)
 }
